@@ -5,10 +5,21 @@
     .env
 
     # Задание переменных окружения для контейнера с postgres
-    POSTGRES_DB=django_database
-    POSTGRES_USER=user
-    POSTGRES_PASSWORD=user
-    POSTGRES_PORT=5432
+    # Задание переменных окружения для контейнера с postgres
+
+    POSTGRES_DB=django_database2
+    POSTGRES_USER=user2
+    POSTGRES_PASSWORD=user2
+    PORT=5432
+    HOST=postgres
+    #POSTGRES_HOST=localhost
+
+    # переменные окружения для отправки писем
+    EMAIL_HOST=smtp.yandex.ru
+    EMAIL_PORT=465
+    EMAIL_HOST_USER=bulat.kajrov@yandex.ru
+    EMAIL_HOST_PASSWORD=yevwqyhwxgejndgc
+    EMAIL_USE_SSL=True
 
     services:
       postgres:
@@ -29,6 +40,18 @@ DATABASES = {
         'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
         'HOST': 'localhost',  так как сам проект django не запускается в docker, иначе пишем имя сервиса postgres
         'PORT': os.getenv('POSTGRES_PORT'),
+    }
+}
+
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('POSTGRES_DB', 'postgres'),  # Используйте значение по умолчанию
+        'USER': os.getenv('POSTGRES_USER', 'postgres'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'postgres'),
+        'HOST': os.getenv('HOST', 'postgres'),  # Имя сервиса в docker-compose
+        'PORT': os.getenv('PORT', '5432'),      # Порт по умолчанию
     }
 }
 
