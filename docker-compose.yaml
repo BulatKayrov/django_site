@@ -1,0 +1,41 @@
+services:
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: app_django
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+      - postgres
+    restart: always
+    env_file:
+      - .env
+    command: docker/app.sh
+
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"
+    container_name: redis_django
+    command: redis-server --port 6379
+
+  postgres:
+    image: postgres
+    env_file:
+      - .env
+    container_name: postgres_django
+    ports:
+      - "5432:5432"
+
+  celery:
+    build:
+      context: .
+    container_name: celery_django
+    depends_on:
+      - app
+    env_file:
+      - .env
+    command: docker/celery.sh

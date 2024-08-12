@@ -1,0 +1,143 @@
+######## POSTGRES ########
+
+1. Создаем docker-composer
+
+    .env
+
+    # Задание переменных окружения для контейнера с postgres
+    POSTGRES_DB=django_database
+    POSTGRES_USER=user
+    POSTGRES_PASSWORD=user
+    POSTGRES_PORT=5432
+
+    services:
+      postgres:
+        image: postgres
+        env_file:  загружаем данные из .env файла
+          - .env
+        container_name: postgres_django
+        ports:
+          - "5432:5432" - проброс портов
+
+2. Устанавливаем настройки в setting.py
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': os.getenv('POSTGRES_DB'),
+        'USER': os.getenv('POSTGRES_USER'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
+        'HOST': 'localhost',  так как сам проект django не запускается в docker, иначе пишем имя сервиса postgres
+        'PORT': os.getenv('POSTGRES_PORT'),
+    }
+}
+
+######## redis ########
+
+1. Создаем docker-composer или дополняем сервис
+
+    services:
+
+      redis:
+        image: redis
+        ports:
+          - "6379:6379" # проброс портов
+        container_name: redis_django
+
+      postgres:
+        image: postgres
+        env_file:  # загружаем данные из .env файла
+          - .env
+        container_name: postgres_django
+        ports:
+          - "5432:5432" # проброс портов
+
+2. Устанавливаем настройки в setting.py
+
+# redis
+
+REDIS_HOST = '127.0.0.1'
+REDIS_PORT = 6379
+BROKER_NAME = 'redis'
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': f'{BROKER_NAME}://{REDIS_HOST}:{REDIS_PORT}',
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
+    }
+}
+
+3. в проекте используем декоратор cache
+
+from django.core.cache import cache
+
+def get_categories(request):
+
+    categories = cache.get('categories')
+    if not categories:
+        categories = Category.objects.all()
+        cache.set('categories', categories, 60) # key, value, expire
+    return {'categories': categories}
+
+######## celery ########
+
+1. в корне проекта где лежит settings.py создаем celery.py и вставляем
+
+import os
+from celery import Celery
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'имя_проекта.settings')
+
+app = Celery('имя_проекта')
+
+app.config_from_object('django.conf:settings', namespace='CELERY')
+app.autodiscover_tasks()
+
+2. Устанавливаем настройки в setting.py
+
+# celery
+
+CELERY_BROKER_URL = f'{BROKER_NAME}://{REDIS_HOST}:{REDIS_PORT}'
+CELERY_RESULT_BACKEND = f'{BROKER_NAME}://{REDIS_HOST}:{REDIS_PORT}'
+
+3. в приложение где нужно создавать задачи создаем tasks.py и внутри создаем задачу
+
+
+@app.task
+def send_email():
+    send_mail(
+        subject='Тема',
+        message='Сообщение',
+        from_email=settings.EMAIL_HOST_USER,    # от кого
+        recipient_list=['bulat.kajrov@yandex.ru'],  # куда/кому
+        fail_silently=False,
+    )
+
+4. запускаем командой celery -A имя_проекта worker --loglevel=info
+5. в приложение где нужно создавать периодическую задачу создаем tasks.py и внутри создаем задачу
+
+@shared_task
+def send_all_posts():
+    posts = Post.objects.all()
+    msg = [f'Заголовок:{post.title}\n текст {post.content}\n автор {post.author}' for post in posts]
+    message = '\n'.join(msg)
+    send_mail(
+        subject='Тема',
+        message=message,
+        from_email=settings.EMAIL_HOST_USER,  # от кого
+        recipient_list=['bulat.kajrov@yandex.ru'],  # куда/кому
+        fail_silently=False,
+    )
+
+app.conf.beat_schedule = {
+    'send_spam_every_1_min': {
+        'task': 'blog.tasks.send_all_posts',
+        'schedule': crontab(minute='*/1')
+    }
+}
+
+6. запускаем командой celery -A имя_проекта worker -B --loglevel=info
+    -B - beat периодически

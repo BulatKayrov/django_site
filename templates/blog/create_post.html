@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="mb-3" style="width: 300px; margin: 0 auto;">
+    <form method="post" action="{% url 'blog:create_post' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="{{ form.title.id_for_label }}" class="form-label">Заголовок статьи</label>
+            {{ form.title }}
+            <!--        <input type="text" class="form-control" id="exampleFormControlInput1" placeholder="example">-->
+        </div>
+
+        <div class="mb-3">
+            <label for="{{ form.content.id_for_label }}" class="form-label">Контент</label>
+            {{ form.content }}
+            <!--        <textarea class="form-control" id="exampleFormControlTextarea1" rows="3"></textarea>-->
+        </div>
+
+        <div class="mb-3">
+            <label for="{{ form.image.id_for_label }}" class="form-label">Загрузить картинку</label>
+            {{ form.image }}
+            <!--        <input class="form-control" type="file" id="formFile">-->
+        </div>
+
+        <div class="input-group mb-3">
+            <div class="mb-3">
+                <label class="input-group-text" for="{{ form.category.id_for_label }}">Категория</label>
+                {{ form.category }}
+            </div>
+
+            <div class="input-group mb-3">
+                <label class="input-group-text" for="{{ form.is_published.id_for_label }}">Статус</label>
+                {{ form.is_published }}
+            </div>
+
+        </div>
+        <button type="submit" class="btn btn-primary">Create</button>
+    </form>
+</div>
+
+{% endblock %}

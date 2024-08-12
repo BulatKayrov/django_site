@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row row-cols-1 row-cols-md-3 g-4">
+    {% for post in posts %}
+    <div class="col">
+        <div class="card h-100">
+            <img src="{{ post.image.url }}" class="card-img-top" alt="{{ post.title }}">
+            <div class="card-body">
+                <h5 class="card-title">{{ post.title }}</h5>
+                <p class="card-text">{{ post.content }}</p>
+            </div>
+
+            <div class="card-footer">
+                <small class="text-body-secondary">{{ post.created_at|date:"d M Y" }}</small>
+                <small class="text-body-secondary">&nbsp Автор: {{ post.author.username }}</small>
+                <small class="text-body-secondary">&nbsp Категория: {{ post.category.title }}</small>
+            </div>
+            <div class="text-center"><a href="{{ post.get_absolute_url }}" class="btn btn-primary">Читать</a></div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% include 'include/pagination.html' %}
+{% endblock %}
